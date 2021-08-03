@@ -1,0 +1,105 @@
+.categories-section .logo-container {
+     font-weight: 700;
+     text-align: center;
+     margin-bottom: 100px;
+     text-transform: capitalize;
+}
+
+.categories-section .logo-container h1 {
+     font-size: 40px;
+     font-weight: 700;
+     position: relative;
+     display: inline-block;
+}
+
+.categories-section .logo-container h1:hover::after {
+     transform: scaleX(1);
+     transform-origin: left;
+}
+
+.categories-section .logo-container h1::after {
+     left: -10px;
+     content: '';
+     width: 110%;
+     height: 10px;
+     bottom: -10px;
+     position: absolute;
+     transform: scaleX(0);
+     transform-origin: right;
+     background: var(--primary-text);
+     transition: transform .5s ease-in-out;
+}
+
+.categories-section .categories-container {
+     display: flex;
+     justify-content: space-around;
+}
+
+.categories-section .categories-container .left-categories,
+.categories-section .categories-container .right-categories {
+     width: 45%;
+}
+
+.categories-section .categories-container .category {
+     width: 95%;
+     height: 400px;
+     overflow: hidden;
+     position: relative;
+     margin-bottom: 20px;
+}
+
+.categories-section .categories-container .category:hover h2 {
+     bottom: 20px;
+}
+
+.categories-section .categories-container .left-categories a:nth-child(1) .category {
+     background: url(../images/shoes_category.jpg) no-repeat;
+     background-position: bottom;
+}
+
+.categories-section .categories-container .left-categories a:nth-child(2) .category {
+     background: url(../images/pants_category.jpg) no-repeat;
+     background-position: top;
+}
+
+.categories-section .categories-container .right-categories a:nth-child(1) .category {
+     background: url(../images/tshirt_category.jpg) no-repeat;
+     background-position: center;
+     background-size: cover;
+}
+
+.categories-section .categories-container .right-categories a:nth-child(2) .category {
+     background: url(../images/accessories_category.jpg) no-repeat;
+     background-position: center;
+     background-size: cover;
+}
+
+/* INDIVIDUAL CATEGORY HOVER */
+.categories-section .categories-container .left-categories a:nth-child(1) .category:hover {
+     background: linear-gradient(0deg, rgba(255,255,255,.8) 0%, rgba(255,255,255,0.5) 27%, rgba(255,255,255,0) 100%), url(../images/shoes_category.jpg) no-repeat;
+     background-position: bottom;
+}
+
+.categories-section .categories-container .left-categories a:nth-child(2) .category:hover {
+     background: linear-gradient(0deg, rgba(255,255,255,.8) 0%, rgba(255,255,255,0.5) 27%, rgba(255,255,255,0) 100%), url(../images/pants_category.jpg) no-repeat;
+     background-position: top;
+}
+
+.categories-section .categories-container .right-categories a:nth-child(1) .category:hover {
+     background: linear-gradient(0deg, rgba(255,255,255,.8) 0%, rgba(255,255,255,0.5) 27%, rgba(255,255,255,0) 100%), url(../images/tshirt_category.jpg) no-repeat;
+     background-position: center;
+     background-size: cover;
+}
+
+.categories-section .categories-container .right-categories a:nth-child(2) .category:hover {
+     background: linear-gradient(0deg, rgba(255,255,255,.8) 0%, rgba(255,255,255,0.5) 27%, rgba(255,255,255,0) 100%), url(../images/accessories_category.jpg) no-repeat;
+     background-position: center;
+     background-size: cover;
+}
+
+.categories-section .categories-container .category h2 {
+     left: 20px;
+     bottom: -50px;
+     position: absolute;
+     transition: bottom .5s ease-in-out;
+}
