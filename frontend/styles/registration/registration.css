@@ -1,0 +1,242 @@
+body {
+     display: grid;
+     min-height: 100vh;
+     position: relative;
+     place-content: center;
+     font-family: "Fira Sans", Helvetica, Arial, sans-serif;
+}
+
+.forms-container {
+     width: 350px;
+     height: 600px;
+     overflow: hidden;
+     position: relative;
+     border-radius: 5px;
+     box-shadow: 10px 10px 20px 0px rgba(0,0,0,0.05);
+}
+
+.forms-container::after {
+     background-image: url('https://images.unsplash.com/photo-1610419965999-ff462f0c27f2?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=358&q=80');
+     background-repeat: no-repeat;
+     background-position: top;
+     background-size: cover;
+     position: absolute;
+     opacity: 0.9;
+     content: '';
+     bottom: 0;
+     right: 0;
+     left: 0;
+     top: 0;
+}
+
+.forms-container .register {
+     top: 50%;
+     left: 50%;
+     width: 65%;
+     z-index: 5;
+     position: absolute;
+     transition: all 0.3s ease;
+     transform: translate(-50%, -50%);
+}
+
+.forms-container .register.inactive {
+     top: 5%;
+     transition: all 0.3s ease;
+     transform: translate(-50%, 0%);
+}
+
+.forms-container .register.inactive .inputs-container, 
+.forms-container .register.inactive .submit-btn {
+     opacity: 0;
+     visibility: hidden;
+}
+
+.forms-container .register.inactive h2 {
+     font-size: 20px;
+     cursor: pointer;
+}
+
+.forms-container .register h2 {
+     color: #fff;
+     font-size: 25px;
+     text-align: center;
+}
+
+.forms-container .register .inputs-container {
+     opacity: 1;
+     overflow: hidden;
+     margin-top: 50px;
+     visibility: visible;
+     transition: all 0.3s ease;
+}
+
+.forms-container .register .inputs-container input {
+     width: 100%;
+     border: none;
+     height: 30px;
+     outline: none;
+     padding: 10px;
+     display: block;
+     font-size: 12px;
+     box-shadow: none;
+     line-height: 30px;
+     margin-bottom: 10px;
+     background: #ffffff63;
+     border: 1px solid #eeeeee;
+}
+
+.forms-container .register .inputs-container input::placeholder {
+     color: #eeeeee;
+}
+
+.forms-container .register .submit-btn {
+     opacity: 1;
+     width: 100%;
+     border: none;
+     display: block;
+     cursor: pointer;
+     font-size: 13px;
+     color: #ffffff;
+     font-weight: bold;
+     margin: 15px auto;
+     padding: 15px 45px;
+     border-radius: 2px;
+     visibility: visible;
+     background: #000000;
+     text-transform: uppercase;
+     transition: all 0.3s ease;
+}
+
+.forms-container .register .submit-btn:hover {
+     transition: all 0.3s ease;
+     background: rgba(0, 0, 0, 0.8);
+}
+
+.forms-container .login {
+     top: 20%;
+     left: 0;
+     right: 0;
+     bottom: 0;
+     z-index: 5;
+     position: absolute;
+     background: #fff;
+     transition: all 0.3s ease;
+}
+
+.forms-container .login::before {
+     left: 50%;
+     top: -20px;
+     z-index: 4;
+     width: 200%;
+     content: '';
+     height: 250px;
+     background: #fff;
+     border-radius: 50%;
+     position: absolute;
+     transition: all 0.3s ease;
+     transform: translate(-50%, 0);
+}
+
+.forms-container .login .center {
+     left: 50%;
+     width: 65%;
+     z-index: 5;
+     position: absolute;
+     top: calc(50% - 10%);
+     transition: all 0.3s ease;
+     transform: translate(-50%, -50%);
+}
+
+.forms-container .login.inactive .center h2 {
+     font-size: 20px;
+     cursor: pointer;
+}
+
+.forms-container .login .center h2 {
+     color: #000;
+     font-size: 25px;
+     cursor: pointer;
+     text-align: center;
+}
+
+.forms-container .login .center .inputs-container {
+     opacity: 1;
+     overflow: hidden;
+     margin-top: 50px;
+     visibility: visible;
+     transition: all 0.3s ease;
+}
+
+.forms-container .login .center .inputs-container input {
+     width: 100%;
+     border: none;
+     height: 30px;
+     outline: none;
+     padding: 10px;
+     display: block;
+     font-size: 12px;
+     box-shadow: none;
+     line-height: 30px;
+     margin-bottom: 10px;
+     border: 1px solid #000000;
+}
+
+.forms-container .login .center .inputs-container input::placeholder {
+     color: #000000;
+}
+
+.forms-container .login .center .submit-btn {
+     opacity: 1;
+     width: 100%;
+     border: none;
+     display: block;
+     cursor: pointer;
+     font-size: 13px;
+     color: #ffffff;
+     font-weight: bold;
+     margin: 15px auto;
+     padding: 15px 45px;
+     border-radius: 2px;
+     visibility: visible;
+     background: #000000;
+     text-transform: uppercase;
+     transition: all 0.3s ease;
+}
+
+.forms-container .login .center .submit-btn:hover {
+     transition: all 0.3s ease;
+     background: rgba(0, 0, 0, 0.8);
+}
+
+.forms-container .login.inactive {
+     top: 90%;
+     transition: all 0.3s ease;
+}
+
+.forms-container .login.inactive .center {
+     top: 10%;
+     transition: all 0.3s ease;
+     transform: translate(-50%, 0%);
+}
+
+.forms-container .login.inactive .inputs-container, 
+.forms-container .login.inactive .submit-btn {
+     opacity: 0;
+     visibility: hidden;
+     transition: all 0.3s ease;
+}
+
+.forms-container .login.inactive .form-title {
+     margin: 0;
+     padding: 0;
+     font-size: 1em;
+     cursor: pointer;
+     transition: all 0.3s ease;
+}
+
+.forms-container .login.inactive .form-title span {
+     opacity: 1;
+     margin-right: 5px;
+     visibility: visible;
+     transition: all 0.3s ease;
+}
