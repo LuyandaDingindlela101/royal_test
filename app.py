@@ -1,9 +1,8 @@
 import hmac
 import sqlite3
-from datetime import timedelta
 
 from flask_cors import CORS
-
+from datetime import timedelta
 from flask import Flask, request, jsonify
 from flask_jwt import JWT, jwt_required, current_identity
 
@@ -16,34 +15,32 @@ class User(object):
 
 
 def create_user_table():
-    conn = sqlite3.connect('royal_db.db')
     print("Opened database successfully")
 
     with sqlite3.connect('royal_db.db') as connection:
-        conn.execute("CREATE TABLE IF NOT EXISTS user("
-                     "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-                     "first_name TEXT NOT NULL,"
-                     "last_name TEXT NOT NULL,"
-                     "username TEXT NOT NULL,"
-                     "email_address TEXT NOT NULL,"
-                     "address TEXT NOT NULL,"
-                     "password TEXT NOT NULL)")
+        connection.execute("CREATE TABLE IF NOT EXISTS user("
+                           "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                           "first_name TEXT NOT NULL,"
+                           "last_name TEXT NOT NULL,"
+                           "username TEXT NOT NULL,"
+                           "email_address TEXT NOT NULL,"
+                           "address TEXT NOT NULL,"
+                           "password TEXT NOT NULL)")
 
     print("user table created successfully")
 
 
 def create_product_table():
-    conn = sqlite3.connect('royal_db.db')
     print("Opened database successfully")
 
     with sqlite3.connect('royal_db.db') as connection:
-        conn.execute("CREATE TABLE IF NOT EXISTS product("
-                     "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-                     "name TEXT NOT NULL,"
-                     "description TEXT NOT NULL,"
-                     "price TEXT NOT NULL,"
-                     "category TEXT NOT NULL,"
-                     "review TEXT NOT NULL)")
+        connection.execute("CREATE TABLE IF NOT EXISTS product("
+                           "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                           "name TEXT NOT NULL,"
+                           "description TEXT NOT NULL,"
+                           "price TEXT NOT NULL,"
+                           "category TEXT NOT NULL,"
+                           "review TEXT NOT NULL)")
 
     print("user table created successfully")
 
@@ -52,11 +49,12 @@ def fetch_users():
     with sqlite3.connect('royal_db.db') as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM user")
-        users = cursor.fetchall()
+        db_users = cursor.fetchall()
 
         new_data = []
 
-        for data in users:
+        for data in db_users:
+            print(data)
             new_data.append(User(data[0], data[3], data[6]))
     return new_data
 
@@ -78,7 +76,6 @@ users = fetch_users()
 
 username_table = {u.username: u for u in users}
 userid_table = {u.id: u for u in users}
-
 
 app = Flask(__name__)
 
@@ -131,7 +128,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        with sqlite3.connect("point_of_sale.db") as conn:
+        with sqlite3.connect("royal_db.db") as conn:
             cursor = conn.cursor()
             cursor.execute(f"SELECT * FROM user WHERE username = '{username}' AND password = '{password}'")
             user_information = cursor.fetchone()
@@ -230,7 +227,8 @@ def edit_product(product_id):
 
             with sqlite3.connect('royal_db.db') as connection:
                 cursor = connection.cursor()
-                cursor.execute(f"UPDATE product SET description = '{str(put_data['description'])}' WHERE id = {str(product_id)}")
+                cursor.execute(
+                    f"UPDATE product SET description = '{str(put_data['description'])}' WHERE id = {str(product_id)}")
                 connection.commit()
 
                 response["message"] = "Content updated successfully"
@@ -252,7 +250,8 @@ def edit_product(product_id):
 
             with sqlite3.connect('royal_db.db') as connection:
                 cursor = connection.cursor()
-                cursor.execute(f"UPDATE product SET category = '{str(put_data['category'])}' WHERE id = {str(product_id)}")
+                cursor.execute(
+                    f"UPDATE product SET category = '{str(put_data['category'])}' WHERE id = {str(product_id)}")
                 connection.commit()
 
                 response["content"] = "Content updated successfully"
