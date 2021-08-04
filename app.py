@@ -1,6 +1,6 @@
 import hmac
 import sqlite3
-from datetime import datetime
+from datetime import timedelta
 
 from flask_cors import CORS
 
@@ -85,7 +85,7 @@ app = Flask(__name__)
 app.debug = True
 
 app.config['SECRET_KEY'] = 'super-secret'
-app.config['JWT_EXPIRATION_DELTA'] = datetime.timedelta(seconds=86400)
+app.config['JWT_EXPIRATION_DELTA'] = timedelta(seconds=86400)
 
 CORS(app)
 
@@ -120,6 +120,32 @@ def user_registration():
             response["status_code"] = 201
 
         return response
+
+
+@app.route("/user-login/", methods=["POST"])
+def login():
+    response = {}
+
+    if request.method == "POST":
+
+        username = request.form['username']
+        password = request.form['password']
+
+        with sqlite3.connect("point_of_sale.db") as conn:
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT * FROM user WHERE username = '{username}' AND password = '{password}'")
+            user_information = cursor.fetchone()
+
+        if user_information:
+            response["user_info"] = user_information
+            response["message"] = "Success"
+            response["status_code"] = 201
+            return jsonify(response)
+
+        else:
+            response['message'] = "Login Unsuccessful, please try again"
+            response['status_code'] = 401
+            return jsonify(response)
 
 
 @app.route('/add-product/', methods=["POST"])
