@@ -46,3 +46,10 @@ def fetch_users():
             new_data.append(User(data[0], data[3], data[6]))
     return new_data
 
+
+def insert_user(first_name, last_name, username, email_address, address, password):
+    with sqlite3.connect("royal_db.db") as conn:
+        cursor = conn.cursor()
+        cursor.execute(f"INSERT INTO user( first_name, last_name, username, email_address, address, password )"
+                       f"VALUES( '{first_name}', '{last_name}', '{username}', '{email_address}', '{address}', '{password}' )")
+        conn.commit()
