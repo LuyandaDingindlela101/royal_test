@@ -1,18 +1,22 @@
+#   IMPORT THE NEEDED MODULES
 import hmac
+import User
 # import sqlite3
+
+from utilities import *
+from database_connection import *
 
 from flask_cors import CORS
 from datetime import timedelta
-from database_connection import *
 from flask import Flask, request, jsonify
 from flask_jwt import JWT, jwt_required, current_identity
 
 
-class User(object):
-    def __init__(self, id, username, password):
-        self.id = id
-        self.username = username
-        self.password = password
+# class User(object):
+#     def __init__(self, id, username, password):
+#         self.id = id
+#         self.username = username
+#         self.password = password
 
 
 # def create_user_table():
@@ -60,47 +64,64 @@ class User(object):
 #     return new_data
 
 
+#   LOGS IN THE USER AND RETURNS THE USER OBJECT. JWT ALSO USES THIS TO CREATE A JWT TOKEN
 def authenticate(username, password):
     user = username_table.get(username, None)
     if user and hmac.compare_digest(user.password.encode('utf-8'), password.encode('utf-8')):
         return user
 
 
+#   THIS FUNCTION IS USED ON ALL THE ROUTES THAT NEED THE JWT TOKEN. JWT DECODES THE TOKEN AND GETS THE USER DETAILS
 def identity(payload):
     user_id = payload['identity']
     return userid_table.get(user_id, None)
 
 
+app = Flask(__name__)
+app.debug = True
+
+email_password = "Asht0nm@rtin"
+
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_USE_TLS'] = False
+app.config['SECRET_KEY'] = 'super-secret'
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PASSWORD'] = email_password
+app.config['MAIL_USERNAME'] = 'ashtonmartingoliath@gmail.com'
+app.config['JWT_EXPIRATION_DELTA'] = timedelta(seconds=86400)
+
+CORS(app)
+mail = Mail(app)
+jwt = JWT(app, authenticate, identity)
+
+#   CREATE THE USER TABLE IF IT DOESNT EXIST
 create_user_table()
+#   CREATE THE PRODUCT TABLE IF IT DOESNT EXIST
 create_product_table()
+#   GET ALL THE USERS IN THE DATABASE
 users = fetch_users()
 
 username_table = {u.username: u for u in users}
 userid_table = {u.id: u for u in users}
 
-app = Flask(__name__)
-
-app.debug = True
-
-app.config['SECRET_KEY'] = 'super-secret'
-app.config['JWT_EXPIRATION_DELTA'] = timedelta(seconds=86400)
-
-CORS(app)
-
-jwt = JWT(app, authenticate, identity)
+#
+# @app.route('/protected')
+# @jwt_required()
+# def protected():
+#     return '%s' % current_identity
 
 
-@app.route('/protected')
-@jwt_required()
-def protected():
-    return '%s' % current_identity
-
-
+#   ROUTE WILL BE USED TO REGISTER A NEW USER, ROUTE ONLY ACCEPTS A POST METHOD
 @app.route('/user-registration/', methods=["POST"])
 def user_registration():
+    #   CREATE AN EMPTY OBJECT THAT WILL HOLD THE response OF THE PROCESS
     response = {}
 
+    # WRAP IN TRY...CATCH
+    #   MAKE SURE THE request.method IS A POST
     if request.method == "POST":
+        #   GET THE FORM DATA TO BE SAVED
         first_name = request.form['first_name']
         last_name = request.form['last_name']
         username = request.form['username']
@@ -108,177 +129,266 @@ def user_registration():
         password = request.form['password']
         email_address = request.form['email_address']
 
+        #   CALL THE register_user FUNCTION TO REGISTER THE USER
+        register_user(first_name, last_name, username, address, password, email_address)
+
         # with sqlite3.connect("royal_db.db") as conn: cursor = conn.cursor() cursor.execute(f"INSERT INTO user(
         # first_name, last_name, username, email_address, address, password )" f"VALUES( '{first_name}',
         # '{last_name}', '{username}', '{email_address}', '{address}', '{password}' )") conn.commit()
 
-        response["message"] = "success"
+        #   SEND THE USER AN EMAIL INFORMING THEM ABOUT THEIR REGISTRATION
+        email_to_send = Message('Welcome to the Radical Store.', sender='ashtonmartingoliath@gmail.com', recipients=[email])
+        email_to_send.body = f"Congratulations {first_name} on a successful register. \n\n" \
+                             f"Welcome to the Radical Store. family, browse around and make sure to enjoy the experience."
+        mail.send(email_to_send)
+
+        #   UPDATE THE response
         response["status_code"] = 201
+        response["message"] = "success"
+        response["email_status"] = "Email was successfully sent"
 
-        return response
+        #   RETURN A JSON VERSION OF THE response
+        return jsonify(response)
 
 
+#   ROUTE WILL BE USED TO LOG A REGISTERED USER IN, ROUTE ONLY ACCEPTS A POST METHOD
 @app.route("/user-login/", methods=["POST"])
 def login():
+    #   CREATE AN EMPTY OBJECT THAT WILL HOLD THE response OF THE PROCESS
     response = {}
 
+    # WRAP IN TRY...CATCH
+    #   MAKE SURE THE request.method IS A POST
     if request.method == "POST":
-
+        #   GET THE FORM DATA TO BE SAVED
         username = request.form['username']
         password = request.form['password']
 
-        with sqlite3.connect("royal_db.db") as conn:
-            cursor = conn.cursor()
-            cursor.execute(f"SELECT * FROM user WHERE username = '{username}' AND password = '{password}'")
-            user_information = cursor.fetchone()
+        # with sqlite3.connect("royal_db.db") as conn:
+        #     cursor = conn.cursor()
+        #     cursor.execute(f"SELECT * FROM user WHERE username = '{username}' AND password = '{password}'")
+        #     user_information = cursor.fetchone()
 
-        if user_information:
-            response["user_info"] = user_information
-            response["message"] = "Success"
-            response["status_code"] = 201
-            return jsonify(response)
+        # if user_information:
+        #   CALL THE register_user FUNCTION TO REGISTER THE USER
+        user = login_user(username, password)
 
-        else:
-            response['message'] = "Login Unsuccessful, please try again"
-            response['status_code'] = 401
-            return jsonify(response)
+        #   UPDATE THE response
+        response["status_code"] = 201
+        response["current_user"] = user
+        response["message"] = "Success"
+
+        #   RETURN A JSON VERSION OF THE response
+        return jsonify(response)
+
+        # else:
+        #     response['message'] = "Login Unsuccessful, please try again"
+        #     response['status_code'] = 401
+        #     return jsonify(response)
 
 
+#   ROUTE WILL BE USED TO ADD A NEW PRODUCT, ROUTE ONLY ACCEPTS A POST METHOD
 @app.route('/add-product/', methods=["POST"])
+#   AN AUTHORISATION TOKEN IS NEEDED TO ACCESS THIS ROUTE
 @jwt_required()
 def add_product():
+    #   CREATE AN EMPTY OBJECT THAT WILL HOLD THE response OF THE PROCESS
     response = {}
 
+    # WRAP IN TRY...CATCH
+    #   MAKE SURE THE request.method IS A POST
     if request.method == "POST":
+        #   GET THE FORM DATA TO BE SAVED
         name = request.form['name']
         description = request.form['description']
         price = request.form['price']
         category = request.form['category']
         review = request.form['review']
 
-        with sqlite3.connect('royal_db.db') as conn:
-            cursor = conn.cursor()
-            cursor.execute(f"INSERT INTO product( name, description, price, category, review )"
-                           f"VALUES( '{name}', '{description}', '{price}', '{category}', '{review}' )")
-            conn.commit()
+        # with sqlite3.connect('royal_db.db') as conn:
+        #     cursor = conn.cursor()
+        #     cursor.execute(f"INSERT INTO product( name, description, price, category, review )"
+        #                    f"VALUES( '{name}', '{description}', '{price}', '{category}', '{review}' )")
+        #     conn.commit()
+        #   CALL THE save_product FUNCTION TO SAVE THE PRODUCT TO THE DATABASE
+        save_product(name, description, price, category, review)
 
-            response["status_code"] = 201
-            response['description'] = "Product successfully added"
+        #   UPDATE THE response
+        response["status_code"] = 201
+        response['description'] = "Product successfully added"
 
-        return response
+        #   RETURN A JSON VERSION OF THE response
+        return jsonify(response)
 
 
+#   ROUTE WILL BE USED TO VIEW ALL PRODUCTS, ROUTE ONLY ACCEPTS A GET METHOD
 @app.route('/show-products/', methods=["GET"])
 def show_products():
+    #   CREATE AN EMPTY OBJECT THAT WILL HOLD THE response OF THE PROCESS
     response = {}
 
-    with sqlite3.connect("royal_db.db") as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM product")
+    # with sqlite3.connect("royal_db.db") as conn:
+    #     cursor = conn.cursor()
+    #     cursor.execute("SELECT * FROM product")
+    #
+    #     products = cursor.fetchall()
+    #   MAKE SURE THE request.method IS A GET
+    if request.method == "GET":
+        #   GET ALL THE PRODUCTS FROM THE DATABASE
+        products = get_all_products()
 
-        products = cursor.fetchall()
-
-    response['status_code'] = 200
-    response['data'] = products
+        #   UPDATE THE response
+        response['status_code'] = 200
+        response['products'] = products
     # render_template('index.html')
 
-    return response
-
-
-@app.route('/view-product/<int:product_id>/', methods=["GET"])
-def view_product(product_id):
-    response = {}
-
-    with sqlite3.connect("royal_db.db") as conn:
-        cursor = conn.cursor()
-        cursor.execute(f"SELECT * FROM product WHERE id={str(product_id)}")
-
-        response["status_code"] = 200
-        response["description"] = "Product retrieved successfully"
-        response["data"] = cursor.fetchone()
-
+    #   RETURN A JSON VERSION OF THE response
     return jsonify(response)
 
 
-@app.route('/edit-product/<int:product_id>/', methods=["PUT"])
-@jwt_required()
-def edit_product(product_id):
+#   ROUTE WILL BE USED TO VIEW A SINGLE PRODUCT, ROUTE ONLY ACCEPTS A GET METHOD
+@app.route('/view-product/<int:product_id>/', methods=["GET"])
+def view_product(product_id):
+    #   CREATE AN EMPTY OBJECT THAT WILL HOLD THE response OF THE PROCESS
     response = {}
 
+    # with sqlite3.connect("royal_db.db") as conn:
+    #     cursor = conn.cursor()
+    #     cursor.execute(f"SELECT * FROM product WHERE id={str(product_id)}")
+    #   MAKE SURE THE request.method IS A GET
+    if request.method == "GET":
+        #   GET A PRODUCT FROM THE DATABASE
+        product = get_one_product()
+
+        #   UPDATE THE response
+        response["status_code"] = 200
+        response["product"] = product
+        response["description"] = "Product retrieved successfully"
+
+    #   RETURN A JSON VERSION OF THE response
+    return jsonify(response)
+
+
+#   ROUTE WILL BE USED TO EDIT A PRODUCT, ROUTE ONLY ACCEPTS A PUT METHOD
+@app.route('/edit-product/<int:product_id>/', methods=["PUT"])
+#   AN AUTHORISATION TOKEN IS NEEDED TO ACCESS THIS ROUTE
+@jwt_required()
+def edit_product(product_id):
+    #   CREATE AN EMPTY OBJECT THAT WILL HOLD THE response OF THE PROCESS
+    response = {}
+
+    #   MAKE SURE THE request.method IS A PUT
     if request.method == "PUT":
+        #   TURN THE INCOMING DATA TO A DICTIONARY TO MAKE IT EASIER TO USE
         incoming_data = dict(request.json)
+        updated_data = {}
 
-        put_data = {}
-
+        #   CHECK IF WE ARE UPDATING THE PRODUCT name
         if incoming_data.get("name") is not None:
-            put_data["name"] = incoming_data.get("name")
+            #   UPDATE THE updated_data
+            updated_data["name"] = incoming_data.get("name")
 
-            with sqlite3.connect('royal_db.db') as connection:
-                cursor = connection.cursor()
-                cursor.execute(f"UPDATE product SET name = '{str(put_data['name'])}' WHERE id = {str(product_id)}")
-                connection.commit()
-                response['message'] = "Update was successfully"
-                response['status_code'] = 200
+            # with sqlite3.connect('royal_db.db') as connection:
+            #     cursor = connection.cursor()
+            #     cursor.execute(f"UPDATE product SET name = '{str(updated_data['name'])}' WHERE id = {str(product_id)}")
+            #     connection.commit()
+            #   CALL THE edit_product AND PASS IN THE COLUMN TO BE UPDATED, THE NEW DATA AND THE product_id
+            edit_product("name", updated_data["name"], product_id)
 
+            #   UPDATE THE response
+            response['status_code'] = 200
+            response['message'] = "name update was successful"
+
+        #   CHECK IF WE ARE UPDATING THE PRODUCT name
         if incoming_data.get("description") is not None:
-            put_data['description'] = incoming_data.get('description')
-            print(put_data)
+            #   UPDATE THE updated_data
+            updated_data['description'] = incoming_data.get('description')
 
-            with sqlite3.connect('royal_db.db') as connection:
-                cursor = connection.cursor()
-                cursor.execute(
-                    f"UPDATE product SET description = '{str(put_data['description'])}' WHERE id = {str(product_id)}")
-                connection.commit()
+            # with sqlite3.connect('royal_db.db') as connection:
+            #     cursor = connection.cursor()
+            #     cursor.execute(
+            #         f"UPDATE product SET description = '{str(updated_data['description'])}' WHERE id = {str(product_id)}")
+            #     connection.commit()
 
-                response["message"] = "Content updated successfully"
-                response["status_code"] = 200
+            #   CALL THE edit_product AND PASS IN THE COLUMN TO BE UPDATED, THE NEW DATA AND THE product_id
+            edit_product("description", updated_data['description'], product_id)
 
+            #   UPDATE THE response
+            response["status_code"] = 200
+            response['message'] = "description update was successful"
+
+        #   CHECK IF WE ARE UPDATING THE PRODUCT name
         if incoming_data.get("price") is not None:
-            put_data['price'] = incoming_data.get('price')
+            #   UPDATE THE updated_data
+            updated_data['price'] = incoming_data.get('price')
 
-            with sqlite3.connect('royal_db.db') as connection:
-                cursor = connection.cursor()
-                cursor.execute(f"UPDATE product SET price = '{str(put_data['price'])}' WHERE id = {str(product_id)}")
-                connection.commit()
+            # with sqlite3.connect('royal_db.db') as connection:
+                # cursor = connection.cursor()
+                # cursor.execute(f"UPDATE product SET price = '{str(updated_data['price'])}' WHERE id = {str(product_id)}")
+                # connection.commit()
 
-                response["content"] = "Content updated successfully"
-                response["status_code"] = 200
+            #   CALL THE edit_product AND PASS IN THE COLUMN TO BE UPDATED, THE NEW DATA AND THE product_id
+            edit_product("price", updated_data['price'], product_id)
 
+            #   UPDATE THE response
+            response["status_code"] = 200
+            response['message'] = "price update was successful"
+
+        #   CHECK IF WE ARE UPDATING THE PRODUCT name
         if incoming_data.get("category") is not None:
-            put_data['category'] = incoming_data.get('category')
+            #   UPDATE THE updated_data
+            updated_data['category'] = incoming_data.get('category')
 
-            with sqlite3.connect('royal_db.db') as connection:
-                cursor = connection.cursor()
-                cursor.execute(
-                    f"UPDATE product SET category = '{str(put_data['category'])}' WHERE id = {str(product_id)}")
-                connection.commit()
+            # with sqlite3.connect('royal_db.db') as connection:
+            #     cursor = connection.cursor()
+            #     cursor.execute(
+            #         f"UPDATE product SET category = '{str(updated_data['category'])}' WHERE id = {str(product_id)}")
+            #     connection.commit()
 
-                response["content"] = "Content updated successfully"
-                response["status_code"] = 200
+            #   CALL THE edit_product AND PASS IN THE COLUMN TO BE UPDATED, THE NEW DATA AND THE product_id
+            edit_product("category", updated_data['category'], product_id)
 
+            #   UPDATE THE response
+            response["status_code"] = 200
+            response['message'] = "category update was successful"
+
+        #   CHECK IF WE ARE UPDATING THE PRODUCT name
         if incoming_data.get("review") is not None:
-            put_data['review'] = incoming_data.get('review')
+            #   UPDATE THE updated_data
+            updated_data['review'] = incoming_data.get('review')
 
-            with sqlite3.connect('royal_db.db') as connection:
-                cursor = connection.cursor()
-                cursor.execute(f"UPDATE product SET review = '{str(put_data['review'])}'  WHERE id = {str(product_id)}")
-                connection.commit()
+            # with sqlite3.connect('royal_db.db') as connection:
+            #     cursor = connection.cursor()
+            #     cursor.execute(f"UPDATE product SET review = '{str(updated_data['review'])}'  WHERE id = {str(product_id)}")
+            #     connection.commit()
 
-                response["content"] = "Content updated successfully"
-                response["status_code"] = 200
+            #   CALL THE edit_product AND PASS IN THE COLUMN TO BE UPDATED, THE NEW DATA AND THE product_id
+            edit_product("review", updated_data['review'], product_id)
+
+            #   UPDATE THE response
+            response["status_code"] = 200
+            response['message'] = "review update was successful"
+
     return response
 
 
+#   ROUTE WILL BE USED TO EDIT A PRODUCT, ROUTE ONLY ACCEPTS A PUT METHOD
 @app.route("/delete-product/<int:product_id>", methods=["GET"])
+#   AN AUTHORISATION TOKEN IS NEEDED TO ACCESS THIS ROUTE
 @jwt_required()
 def delete_product(product_id):
+    #   CREATE AN EMPTY OBJECT THAT WILL HOLD THE response OF THE PROCESS
     response = {}
-    with sqlite3.connect("royal_db.db") as conn:
-        cursor = conn.cursor()
-        cursor.execute(f"DELETE FROM product WHERE id={str(product_id)}")
-        conn.commit()
+    # with sqlite3.connect("royal_db.db") as conn:
+    #     cursor = conn.cursor()
+    #     cursor.execute(f"DELETE FROM product WHERE id={str(product_id)}")
+    #     conn.commit()
 
-        response['status_code'] = 200
-        response['message'] = "Product deleted successfully."
+    #   CALL THE delete_product AND PASS IN THE product_id
+    delete_product(product_id)
+
+    #   UPDATE THE response
+    response['status_code'] = 200
+    response['message'] = "product deleted successfully."
 
     return response
